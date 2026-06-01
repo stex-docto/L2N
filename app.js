@@ -18,11 +18,10 @@ const BASE_MIDI = 48;
 // ── Note math ─────────────────────────────────────────────────────────────────
 
 function letterMidi(letter, rootSemi, mode) {
-  const idx = letter.toUpperCase().charCodeAt(0) - 65;   // 0-25
-  const octOff = Math.floor(idx / 7);
-  const deg    = idx % 7;
-  const scale  = mode === 'major' ? MAJOR : MINOR;
-  return BASE_MIDI + rootSemi + 12 * octOff + scale[deg];
+  const idx   = letter.toUpperCase().charCodeAt(0) - 65;   // 0-25
+  const deg   = idx % 7;
+  const scale = mode === 'major' ? MAJOR : MINOR;
+  return BASE_MIDI + rootSemi + scale[deg];
 }
 
 function midiToFreq(midi) {

@@ -4,14 +4,17 @@ Type any text and hear it played as music.
 
 ## How it works
 
-Each letter maps to a **scale degree** — A is always the root (1st degree), cycling up through octaves every 7 letters:
+Each letter maps to a **scale degree** via modulo 7 — all 26 letters loop on the same single octave:
 
-| Letters | Octave |
+| Letters | Degree |
 |---------|--------|
-| A – G   | 3      |
-| H – N   | 4      |
-| O – U   | 5      |
-| V – Z   | 6–7    |
+| A H O V | 1 (root) |
+| B I P W | 2 |
+| C J Q X | 3 |
+| D K R Y | 4 |
+| E L S Z | 5 |
+| F M T   | 6 |
+| G N U   | 7 |
 
 `A → La` in the default key (La / A). The connection is direct: in standard notation, **A = La**, so the English alphabet starting at A naturally maps to solfège starting at La.
 
