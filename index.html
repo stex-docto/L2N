@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Letter2Note — Type &amp; Play</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <header>
+    <div class="logo">♪</div>
+    <h1>Letter<span class="accent">2</span>Note</h1>
+    <p class="tagline">Every letter is a note. Type something. Hear it.</p>
+  </header>
+
+  <main>
+
+    <!-- Text Input -->
+    <section class="card">
+      <label class="field-label" for="text-input">Your Text</label>
+      <textarea id="text-input" rows="3"
+        placeholder="Type anything…&#10;e.g. HELLO WORLD  or  YOUR NAME"
+        spellcheck="false"></textarea>
+    </section>
+
+    <!-- Controls -->
+    <section class="card controls-card">
+      <div class="control-row">
+
+        <div class="control-group">
+          <label class="field-label">Key</label>
+          <select id="key-select">
+            <option value="0">Do (C)</option>
+            <option value="1">Do# / Réb  (C# / Db)</option>
+            <option value="2">Ré (D)</option>
+            <option value="3">Ré# / Mib  (D# / Eb)</option>
+            <option value="4">Mi (E)</option>
+            <option value="5">Fa (F)</option>
+            <option value="6">Fa# / Solb  (F# / Gb)</option>
+            <option value="7">Sol (G)</option>
+            <option value="8">Sol# / Lab  (G# / Ab)</option>
+            <option value="9" selected>La (A)</option>
+            <option value="10">La# / Sib  (A# / Bb)</option>
+            <option value="11">Si (B)</option>
+          </select>
+        </div>
+
+        <div class="control-group">
+          <label class="field-label">Mode</label>
+          <div class="toggle-row">
+            <button class="toggle-btn active" data-mode="major">Major</button>
+            <button class="toggle-btn"        data-mode="minor">Minor</button>
+          </div>
+        </div>
+
+        <div class="control-group grow">
+          <label class="field-label">Tempo — <strong id="tempo-val">120</strong> BPM</label>
+          <input type="range" id="tempo-input" min="40" max="240" value="120" step="5">
+        </div>
+
+      </div>
+
+      <div class="control-row second-row">
+        <label class="check-control">
+          <input type="checkbox" id="merge-repeats" checked>
+          <span>Merge repeated letters into longer notes
+            <em>(AAA → 3 beats tied)</em>
+          </span>
+        </label>
+      </div>
+    </section>
+
+    <!-- Player -->
+    <section class="card player-card">
+      <div id="note-display" class="note-display">
+        <span class="hint">Press ▶ Play to hear your text as music</span>
+      </div>
+      <div id="current-note" class="current-note">—</div>
+      <div class="btn-row">
+        <button id="play-btn"  class="btn-play">▶ Play</button>
+        <button id="stop-btn"  class="btn-stop" disabled>■ Stop</button>
+      </div>
+    </section>
+
+    <!-- Alphabet Mapping -->
+    <section class="card">
+      <div class="map-header">
+        <h2>Alphabet → Notes</h2>
+        <span id="key-label" class="key-badge">La Major (A Major)</span>
+      </div>
+      <div id="mapping-grid" class="mapping-grid"></div>
+    </section>
+
+  </main>
+
+  <footer>
+    Every letter maps to a scale degree — A is the root, cycling up through octaves.
+    <br>
+    <a href="https://github.com/stex-docto/L2N" target="_blank" rel="noopener">GitHub</a>
+    &nbsp;·&nbsp; Built with Web Audio API
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
