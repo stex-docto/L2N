@@ -109,9 +109,12 @@ function buildEvents(text, rootSemi, mode, beatSec, merge) {
       }
       const midi    = letterMidi(ch, rootSemi, mode);
       const slotDur = beatSec * count;
-      // Unmerged (single) notes: play 80% of the slot so back-to-back same-
-      // frequency notes have a clear gap and sound distinct from a linked note.
-      const audioDur = count === 1 ? slotDur * 0.80 : slotDur;
+      // Single note = quarter note: subtract a fixed 40 ms articulation gap so
+      // repeated same-letter notes re-attack clearly without clipping the note.
+      // Merged notes fill the full slot (legato hold, no re-attack needed).
+      const audioDur = count === 1
+        ? Math.max(slotDur * 0.5, slotDur - 0.04)
+        : slotDur;
       events.push({
         type:        'note',
         letter:      ch,
