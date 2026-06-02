@@ -1,36 +1,84 @@
-// ── Scales & naming ───────────────────────────────────────────────────────────
+// ── Note mapping ──────────────────────────────────────────────────────────────
+//
+// Fixed assignment: A=La(A4), B=Si(B4), C=Do(C4), D=Ré(D4),
+//                   E=Mi(E4), F=Fa(F4), G=Sol(G4) — then modulo 7 for H-Z.
+// Choosing a key/mode only applies the key signature's alterations
+// (sharps or flats) to the base natural notes.
 
-const MAJOR = [0, 2, 4, 5, 7, 9, 11];
-const MINOR = [0, 2, 3, 5, 7, 8, 10];
+const NATURAL_MIDI = { A:69, B:71, C:60, D:62, E:64, F:65, G:67 };
+const LETTER_SOL   = { A:'La', B:'Si', C:'Do', D:'Ré', E:'Mi', F:'Fa', G:'Sol' };
 
-// Both sharp and flat names — we pick sharp for display (cleaner in context)
-const SOL_NAMES = ['Do','Do#','Ré','Ré#','Mi','Fa','Fa#','Sol','Sol#','La','La#','Si'];
-const FULL_KEY_NAMES = [
-  'Do Maj','Do#/Réb Maj','Ré Maj','Ré#/Mib Maj','Mi Maj','Fa Maj',
-  'Fa#/Solb Maj','Sol Maj','Sol#/Lab Maj','La Maj','La#/Sib Maj','Si Maj'
-];
+// Key signatures: which base letter names get +1 (sharp) or -1 (flat).
+// Order of sharps: F C G D A E B  — order of flats: B E A D G C F
+const KEY_SIGS = {
+  major: {
+    0:  {},                                       // C  major
+    7:  { F:1 },                                  // G  major (1#)
+    2:  { F:1, C:1 },                             // D  major (2#)
+    9:  { F:1, C:1, G:1 },                        // A  major (3#)
+    4:  { F:1, C:1, G:1, D:1 },                   // E  major (4#)
+    11: { F:1, C:1, G:1, D:1, A:1 },              // B  major (5#)
+    6:  { F:1, C:1, G:1, D:1, A:1, E:1 },         // F#/Gb major (6#)
+    5:  { B:-1 },                                 // F  major (1b)
+    10: { B:-1, E:-1 },                           // Bb major (2b)
+    3:  { B:-1, E:-1, A:-1 },                     // Eb major (3b)
+    8:  { B:-1, E:-1, A:-1, D:-1 },               // Ab major (4b)
+    1:  { B:-1, E:-1, A:-1, D:-1, G:-1 },         // Db major (5b)
+  },
+  minor: {
+    9:  {},                                       // A  minor
+    4:  { F:1 },                                  // E  minor (1#)
+    11: { F:1, C:1 },                             // B  minor (2#)
+    6:  { F:1, C:1, G:1 },                        // F# minor (3#)
+    1:  { F:1, C:1, G:1, D:1 },                   // C# minor (4#)
+    8:  { F:1, C:1, G:1, D:1, A:1 },              // G# minor (5#)
+    3:  { F:1, C:1, G:1, D:1, A:1, E:1 },         // D# minor (6#)
+    2:  { B:-1 },                                 // D  minor (1b)
+    7:  { B:-1, E:-1 },                           // G  minor (2b)
+    0:  { B:-1, E:-1, A:-1 },                     // C  minor (3b)
+    5:  { B:-1, E:-1, A:-1, D:-1 },               // F  minor (4b)
+    10: { B:-1, E:-1, A:-1, D:-1, G:-1 },         // Bb minor (5b)
+  }
+};
 
-// Mapping starts at C3 (MIDI 48).
-// Letter index 0 (A) → root of chosen key at octave 3.
-// Every 7 letters = one octave up.
-const BASE_MIDI = 48;
+// Proper display names for each key (avoids showing "La# Majeur" for Bb major)
+const KEY_NAMES = {
+  major: {
+    0:'Do Majeur',  7:'Sol Majeur', 2:'Ré Majeur',  9:'La Majeur',
+    4:'Mi Majeur',  11:'Si Majeur', 6:'Fa#/Solb Majeur',
+    5:'Fa Majeur',  10:'Sib Majeur', 3:'Mib Majeur',
+    8:'Lab Majeur', 1:'Réb Majeur',
+  },
+  minor: {
+    9:'La Mineur',  4:'Mi Mineur',  11:'Si Mineur', 6:'Fa# Mineur',
+    1:'Do# Mineur', 8:'Sol# Mineur', 3:'Ré# Mineur',
+    2:'Ré Mineur',  7:'Sol Mineur', 0:'Do Mineur',
+    5:'Fa Mineur',  10:'Sib Mineur',
+  }
+};
 
 // ── Note math ─────────────────────────────────────────────────────────────────
 
+function baseLetter(letter) {
+  const idx = letter.toUpperCase().charCodeAt(0) - 65;
+  return String.fromCharCode(65 + (idx % 7));   // A-G
+}
+
 function letterMidi(letter, rootSemi, mode) {
-  const idx   = letter.toUpperCase().charCodeAt(0) - 65;   // 0-25
-  const deg   = idx % 7;
-  const scale = mode === 'major' ? MAJOR : MINOR;
-  return BASE_MIDI + rootSemi + scale[deg];
+  const bl  = baseLetter(letter);
+  const alt = (KEY_SIGS[mode][rootSemi] || {})[bl] || 0;
+  return NATURAL_MIDI[bl] + alt;
+}
+
+function letterNoteName(letter, rootSemi, mode) {
+  const bl  = baseLetter(letter);
+  const alt = (KEY_SIGS[mode][rootSemi] || {})[bl] || 0;
+  const acc = alt === 1 ? '#' : alt === -1 ? 'b' : '';
+  return LETTER_SOL[bl] + acc;
 }
 
 function midiToFreq(midi) {
   return 440 * Math.pow(2, (midi - 69) / 12);
-}
-
-function midiName(midi) {
-  const octave = Math.floor(midi / 12) - 1;
-  return SOL_NAMES[midi % 12] + octave;
 }
 
 // ── Audio engine ──────────────────────────────────────────────────────────────
@@ -107,11 +155,8 @@ function buildEvents(text, rootSemi, mode, beatSec, merge) {
       if (merge) {
         while (i + count < text.length && upper[i + count] === ch) count++;
       }
-      const midi    = letterMidi(ch, rootSemi, mode);
-      const slotDur = beatSec * count;
-      // Single note = quarter note: subtract a fixed 40 ms articulation gap so
-      // repeated same-letter notes re-attack clearly without clipping the note.
-      // Merged notes fill the full slot (legato hold, no re-attack needed).
+      const midi     = letterMidi(ch, rootSemi, mode);
+      const slotDur  = beatSec * count;
       const audioDur = count === 1
         ? Math.max(slotDur * 0.5, slotDur - 0.04)
         : slotDur;
@@ -119,7 +164,7 @@ function buildEvents(text, rootSemi, mode, beatSec, merge) {
         type:        'note',
         letter:      ch,
         midi,
-        noteName:    midiName(midi),
+        noteName:    letterNoteName(ch, rootSemi, mode),
         slotDur,
         audioDur,
         charIndices: Array.from({ length: count }, (_, k) => i + k),
@@ -258,8 +303,7 @@ function updateMappingGrid() {
 
   for (let i = 0; i < 26; i++) {
     const letter = String.fromCharCode(65 + i);
-    const midi   = letterMidi(letter, rootSemi, mode);
-    const name   = midiName(midi);
+    const name   = letterNoteName(letter, rootSemi, mode);
 
     const card   = document.createElement('div');
     card.className = 'letter-card';
@@ -269,9 +313,8 @@ function updateMappingGrid() {
     grid.appendChild(card);
   }
 
-  const keyName  = SOL_NAMES[rootSemi];
-  const modeName = mode === 'major' ? 'Majeur' : 'Mineur';
-  document.getElementById('key-label').textContent = `${keyName} ${modeName}`;
+  document.getElementById('key-label').textContent =
+    KEY_NAMES[mode][rootSemi] || `${rootSemi} ${mode}`;
 }
 
 // ── Init ──────────────────────────────────────────────────────────────────────

@@ -4,19 +4,19 @@ Type any text and hear it played as music.
 
 ## How it works
 
-Each letter maps to a **scale degree** via modulo 7 — all 26 letters loop on the same single octave:
+Letters have a **fixed** mapping to natural notes (A=La, B=Si, C=Do, …), cycling modulo 7 for H–Z:
 
-| Letters | Degree |
-|---------|--------|
-| A H O V | 1 (root) |
-| B I P W | 2 |
-| C J Q X | 3 |
-| D K R Y | 4 |
-| E L S Z | 5 |
-| F M T   | 6 |
-| G N U   | 7 |
+| Letters | Natural note |
+|---------|-------------|
+| A H O V | La (A) |
+| B I P W | Si (B) |
+| C J Q X | Do (C) |
+| D K R Y | Ré (D) |
+| E L S Z | Mi (E) |
+| F M T   | Fa (F) |
+| G N U   | Sol (G) |
 
-`A → La` in the default key (La / A). The connection is direct: in standard notation, **A = La**, so the English alphabet starting at A naturally maps to solfège starting at La.
+**Key + mode only add alterations** (sharps or flats from the key signature). For example, D major adds F# and C#, so every F/M/T plays Fa# and every C/J/Q/X plays Do#. A minor adds nothing — all letters stay natural.
 
 ## Controls
 
