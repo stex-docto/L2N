@@ -107,24 +107,28 @@ function buildEvents(text, rootSemi, mode, beatSec, merge) {
       if (merge) {
         while (i + count < text.length && upper[i + count] === ch) count++;
       }
-      const midi = letterMidi(ch, rootSemi, mode);
+      const midi    = letterMidi(ch, rootSemi, mode);
+      const slotDur = beatSec * count;
+      // Unmerged (single) notes: play 80% of the slot so back-to-back same-
+      // frequency notes have a clear gap and sound distinct from a linked note.
+      const audioDur = count === 1 ? slotDur * 0.80 : slotDur;
       events.push({
         type:        'note',
         letter:      ch,
         midi,
         noteName:    midiName(midi),
-        duration:    beatSec * count,
+        slotDur,
+        audioDur,
         charIndices: Array.from({ length: count }, (_, k) => i + k),
       });
       i += count;
 
     } else if (ch === ' ') {
-      events.push({ type: 'rest', duration: beatSec, charIndices: [i] });
+      events.push({ type: 'rest', slotDur: beatSec, audioDur: 0, charIndices: [i] });
       i++;
 
     } else {
-      // Digits, punctuation → short rest
-      events.push({ type: 'rest', duration: beatSec * 0.5, charIndices: [i] });
+      events.push({ type: 'rest', slotDur: beatSec * 0.5, audioDur: 0, charIndices: [i] });
       i++;
     }
   }
@@ -165,7 +169,7 @@ function startPlayback() {
     const evStart = elapsed;
 
     if (ev.type === 'note') {
-      scheduleNote(ev.midi, ev.duration, t0 + evStart);
+      scheduleNote(ev.midi, ev.audioDur, t0 + evStart);
     }
 
     const tms = evStart * 1000;
@@ -197,7 +201,7 @@ function startPlayback() {
       }
     }, tms));
 
-    elapsed += ev.duration;
+    elapsed += ev.slotDur;
   });
 
   // End of playback
