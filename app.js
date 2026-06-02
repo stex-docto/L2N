@@ -9,39 +9,37 @@ const NATURAL_MIDI = { A:69, B:71, C:60, D:62, E:64, F:65, G:67 };
 const LETTER_SOL   = { A:'La', B:'Si', C:'Do', D:'Ré', E:'Mi', F:'Fa', G:'Sol' };
 
 // Key signatures: which base letter names get +1 (sharp) or -1 (flat).
-// Order of sharps: F C G D A E B  — order of flats: B E A D G C F
 const KEY_SIGS = {
   major: {
-    0:  {},                                       // C  major
-    7:  { F:1 },                                  // G  major (1#)
-    2:  { F:1, C:1 },                             // D  major (2#)
-    9:  { F:1, C:1, G:1 },                        // A  major (3#)
-    4:  { F:1, C:1, G:1, D:1 },                   // E  major (4#)
-    11: { F:1, C:1, G:1, D:1, A:1 },              // B  major (5#)
-    6:  { F:1, C:1, G:1, D:1, A:1, E:1 },         // F#/Gb major (6#)
-    5:  { B:-1 },                                 // F  major (1b)
-    10: { B:-1, E:-1 },                           // Bb major (2b)
-    3:  { B:-1, E:-1, A:-1 },                     // Eb major (3b)
-    8:  { B:-1, E:-1, A:-1, D:-1 },               // Ab major (4b)
-    1:  { B:-1, E:-1, A:-1, D:-1, G:-1 },         // Db major (5b)
+    0:  {},
+    7:  { F:1 },
+    2:  { F:1, C:1 },
+    9:  { F:1, C:1, G:1 },
+    4:  { F:1, C:1, G:1, D:1 },
+    11: { F:1, C:1, G:1, D:1, A:1 },
+    6:  { F:1, C:1, G:1, D:1, A:1, E:1 },
+    5:  { B:-1 },
+    10: { B:-1, E:-1 },
+    3:  { B:-1, E:-1, A:-1 },
+    8:  { B:-1, E:-1, A:-1, D:-1 },
+    1:  { B:-1, E:-1, A:-1, D:-1, G:-1 },
   },
   minor: {
-    9:  {},                                       // A  minor
-    4:  { F:1 },                                  // E  minor (1#)
-    11: { F:1, C:1 },                             // B  minor (2#)
-    6:  { F:1, C:1, G:1 },                        // F# minor (3#)
-    1:  { F:1, C:1, G:1, D:1 },                   // C# minor (4#)
-    8:  { F:1, C:1, G:1, D:1, A:1 },              // G# minor (5#)
-    3:  { F:1, C:1, G:1, D:1, A:1, E:1 },         // D# minor (6#)
-    2:  { B:-1 },                                 // D  minor (1b)
-    7:  { B:-1, E:-1 },                           // G  minor (2b)
-    0:  { B:-1, E:-1, A:-1 },                     // C  minor (3b)
-    5:  { B:-1, E:-1, A:-1, D:-1 },               // F  minor (4b)
-    10: { B:-1, E:-1, A:-1, D:-1, G:-1 },         // Bb minor (5b)
+    9:  {},
+    4:  { F:1 },
+    11: { F:1, C:1 },
+    6:  { F:1, C:1, G:1 },
+    1:  { F:1, C:1, G:1, D:1 },
+    8:  { F:1, C:1, G:1, D:1, A:1 },
+    3:  { F:1, C:1, G:1, D:1, A:1, E:1 },
+    2:  { B:-1 },
+    7:  { B:-1, E:-1 },
+    0:  { B:-1, E:-1, A:-1 },
+    5:  { B:-1, E:-1, A:-1, D:-1 },
+    10: { B:-1, E:-1, A:-1, D:-1, G:-1 },
   }
 };
 
-// Proper display names for each key (avoids showing "La# Majeur" for Bb major)
 const KEY_NAMES = {
   major: {
     0:'Do Majeur',  7:'Sol Majeur', 2:'Ré Majeur',  9:'La Majeur',
@@ -61,7 +59,7 @@ const KEY_NAMES = {
 
 function baseLetter(letter) {
   const idx = letter.toUpperCase().charCodeAt(0) - 65;
-  return String.fromCharCode(65 + (idx % 7));   // A-G
+  return String.fromCharCode(65 + (idx % 7));
 }
 
 function letterMidi(letter, rootSemi, mode) {
@@ -84,7 +82,7 @@ function midiToFreq(midi) {
 // ── Audio engine ──────────────────────────────────────────────────────────────
 
 let audioCtx = null;
-let scheduledOscs = [];     // { osc, gain } pairs for early stop
+let scheduledOscs = [];
 
 function ctx() {
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -96,7 +94,6 @@ function scheduleNote(midi, duration, startTime) {
   const ac = ctx();
   const freq = midiToFreq(midi);
 
-  // Two oscillators: triangle (body) + sine slight detune (shimmer)
   function makeOsc(type, detuneC, vol) {
     const osc  = ac.createOscillator();
     const gain = ac.createGain();
@@ -104,8 +101,8 @@ function scheduleNote(midi, duration, startTime) {
     osc.frequency.value = freq;
     osc.detune.value = detuneC;
 
-    const atk = Math.min(0.025, duration * 0.08);
-    const rel = Math.min(0.12, duration * 0.25);
+    const atk    = Math.min(0.025, duration * 0.08);
+    const rel    = Math.min(0.12, duration * 0.25);
     const susEnd = Math.max(startTime + atk, startTime + duration - rel);
 
     gain.gain.setValueAtTime(0, startTime);
@@ -120,7 +117,6 @@ function scheduleNote(midi, duration, startTime) {
     scheduledOscs.push({ osc, gain });
   }
 
-  // Scale volume down slightly for high notes to avoid harshness
   const volScale = midi > 80 ? 0.18 : 0.26;
   makeOsc('triangle', 0, volScale);
   makeOsc('sine', 7, volScale * 0.35);
@@ -161,22 +157,22 @@ function buildEvents(text, rootSemi, mode, beatSec, merge) {
         ? Math.max(slotDur * 0.5, slotDur - 0.04)
         : slotDur;
       events.push({
-        type:        'note',
-        letter:      ch,
+        type:     'note',
+        letter:   ch,
         midi,
-        noteName:    letterNoteName(ch, rootSemi, mode),
+        noteName: letterNoteName(ch, rootSemi, mode),
+        beats:    count,
         slotDur,
         audioDur,
-        charIndices: Array.from({ length: count }, (_, k) => i + k),
       });
       i += count;
 
     } else if (ch === ' ') {
-      events.push({ type: 'rest', slotDur: beatSec, audioDur: 0, charIndices: [i] });
+      events.push({ type: 'rest', beats: 1, slotDur: beatSec, audioDur: 0 });
       i++;
 
     } else {
-      events.push({ type: 'rest', slotDur: beatSec * 0.5, audioDur: 0, charIndices: [i] });
+      events.push({ type: 'rest', beats: 1, slotDur: beatSec * 0.5, audioDur: 0 });
       i++;
     }
   }
@@ -184,10 +180,205 @@ function buildEvents(text, rootSemi, mode, beatSec, merge) {
   return events;
 }
 
+// ── Sheet music ───────────────────────────────────────────────────────────────
+
+let vfNoteMap = {};  // eventIdx → VF StaveNote (first visual note for the event)
+
+function letterToVFKey(letter, rootSemi, mode) {
+  const bl  = baseLetter(letter);
+  const alt = (KEY_SIGS[mode][rootSemi] || {})[bl] || 0;
+  const acc = alt === 1 ? '#' : alt === -1 ? 'b' : '';
+  return `${bl.toLowerCase()}${acc}/4`;
+}
+
+// Beat count → VexFlow duration string
+function beatsToDur(beats) {
+  if (beats >= 4) return 'w';
+  if (beats >= 3) return 'hd';
+  if (beats >= 2) return 'h';
+  return 'q';
+}
+
+// Decompose a beat count into valid VF durations (largest first)
+function splitBeats(total) {
+  const out = [];
+  let r = total;
+  for (const d of [4, 3, 2, 1]) {
+    while (r >= d - 0.01) { out.push(d); r -= d; }
+  }
+  return out.length ? out : [1];
+}
+
+function renderSheetMusic(events, rootSemi, mode, tempo) {
+  vfNoteMap = {};
+  const container = document.getElementById('sheet-music');
+  container.innerHTML = '';
+
+  if (!events.length || typeof Vex === 'undefined') return;
+
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, StaveTie } =
+    Vex.Flow;
+  const beatSec = 60 / tempo;
+
+  // ── 1. Flatten events → render items ────────────────────────────────────────
+  // Each item: { isNote, beats, key, alt, evIdx, first }
+  // Merged notes > 4 beats are split; ties connect the pieces.
+  const items = [];
+
+  events.forEach((ev, evIdx) => {
+    const rawBeats = Math.max(1, Math.round(ev.slotDur / beatSec));
+
+    if (ev.type === 'note') {
+      const key   = letterToVFKey(ev.letter, rootSemi, mode);
+      const alt   = (KEY_SIGS[mode][rootSemi] || {})[baseLetter(ev.letter)] || 0;
+      const parts = splitBeats(rawBeats);
+      parts.forEach((b, pi) => {
+        items.push({
+          isNote: true,
+          beats:  b,
+          key, alt, evIdx,
+          first:    pi === 0,
+          tieFrom:  pi > 0,
+          tieTo:    pi < parts.length - 1,
+        });
+      });
+    } else {
+      // Rest — keep max 4 beats per item
+      splitBeats(Math.min(4, Math.max(1, rawBeats))).forEach(b => {
+        items.push({ isNote: false, beats: b, evIdx });
+      });
+    }
+  });
+
+  // ── 2. Pack into 4-beat measures ─────────────────────────────────────────────
+  const BEATS_PER_MEASURE = 4;
+  const measures = [];
+  let cur = [], curB = 0;
+
+  function pushMeasure() {
+    // pad remaining space with rests
+    const pad = BEATS_PER_MEASURE - curB;
+    if (pad > 0.01) {
+      splitBeats(pad).forEach(b =>
+        cur.push({ isNote: false, beats: b, evIdx: -1, isPad: true })
+      );
+    }
+    measures.push(cur);
+    cur = []; curB = 0;
+  }
+
+  for (const item of items) {
+    if (curB + item.beats > BEATS_PER_MEASURE + 0.01) pushMeasure();
+    cur.push(item);
+    curB += item.beats;
+    if (Math.abs(curB - BEATS_PER_MEASURE) < 0.01) pushMeasure();
+  }
+  if (cur.length) pushMeasure();
+  if (!measures.length) return;
+
+  // ── 3. Render ────────────────────────────────────────────────────────────────
+  const W   = Math.max(400, container.clientWidth || 700);
+  const mpr = Math.max(1, Math.floor((W - 30) / 230));  // measures per row
+  const sw  = Math.floor((W - 30) / mpr);                // stave width
+  const RH  = 140;
+  const rows = Math.ceil(measures.length / mpr);
+
+  const renderer = new Renderer(container, Renderer.Backends.SVG);
+  renderer.resize(W, rows * RH + 20);
+  const gCtx = renderer.getContext();
+
+  // Collect tie pairs: { fromNote, toNote }
+  const tiePairs = [];
+  let pendingTie = null;  // { note: VF.StaveNote }
+
+  measures.forEach((mItems, mIdx) => {
+    const row = Math.floor(mIdx / mpr);
+    const col = mIdx % mpr;
+    const x   = col * sw + 15;
+    const y   = row * RH + 35;
+
+    const stave = new Stave(x, y, sw - 5);
+    if (col === 0)  stave.addClef('treble');
+    if (mIdx === 0) stave.addTimeSignature('4/4');
+    stave.setContext(gCtx).draw();
+
+    const vfNotes = mItems.map(item => {
+      const dur = beatsToDur(item.beats);
+
+      if (item.isNote) {
+        const n = new StaveNote({ keys: [item.key], duration: dur });
+        if (item.alt !== 0) {
+          n.addModifier(new Accidental(item.alt > 0 ? '#' : 'b'), 0);
+        }
+        // Map first occurrence for highlight
+        if (item.evIdx >= 0 && item.first) vfNoteMap[item.evIdx] = n;
+
+        // Tie from previous measure
+        if (item.tieFrom && pendingTie) {
+          tiePairs.push({ from: pendingTie.note, to: n });
+        }
+        pendingTie = item.tieTo ? { note: n } : null;
+        return n;
+      }
+
+      pendingTie = null;
+      return new StaveNote({ keys: ['b/4'], duration: `${dur}r` });
+    });
+
+    // Intra-measure ties
+    mItems.forEach((item, i) => {
+      if (item.tieTo && i + 1 < mItems.length && mItems[i + 1].tieFrom) {
+        tiePairs.push({ from: vfNotes[i], to: vfNotes[i + 1] });
+      }
+    });
+
+    try {
+      const voice = new Voice({ num_beats: BEATS_PER_MEASURE, beat_value: 4 });
+      voice.setStrict(false);
+      voice.addTickables(vfNotes);
+      new Formatter().joinVoices([voice]).format([voice], sw - 60);
+      voice.draw(gCtx, stave);
+    } catch (e) { console.warn('VexFlow measure', mIdx, e); }
+  });
+
+  // Draw ties after all notes are positioned
+  tiePairs.forEach(({ from, to }) => {
+    try {
+      new StaveTie({
+        first_note: from, last_note: to,
+        first_indices: [0], last_indices: [0],
+      }).setContext(gCtx).draw();
+    } catch (_) {}
+  });
+}
+
+function highlightSheetNote(evIdx) {
+  document.getElementById('sheet-music')
+    .querySelectorAll('.vf-active').forEach(el => el.classList.remove('vf-active'));
+  const note = vfNoteMap[evIdx];
+  if (note?.attrs?.el) note.attrs.el.classList.add('vf-active');
+}
+
+let _refreshTimer = null;
+function scheduleSheetRefresh() {
+  clearTimeout(_refreshTimer);
+  _refreshTimer = setTimeout(() => {
+    if (playing) return;
+    const text = document.getElementById('text-input').value;
+    if (!text.trim()) { document.getElementById('sheet-music').innerHTML = ''; return; }
+    const rootSemi = parseInt(document.getElementById('key-select').value);
+    const mode     = document.querySelector('.toggle-btn.active').dataset.mode;
+    const tempo    = parseInt(document.getElementById('tempo-input').value);
+    const merge    = document.getElementById('merge-repeats').checked;
+    const beatSec  = 60 / tempo;
+    renderSheetMusic(buildEvents(text, rootSemi, mode, beatSec, merge), rootSemi, mode, tempo);
+  }, 280);
+}
+
 // ── Playback state ────────────────────────────────────────────────────────────
 
-let playing      = false;
-let uiTimeouts   = [];
+let playing    = false;
+let uiTimeouts = [];
 
 function startPlayback() {
   const text = document.getElementById('text-input').value;
@@ -203,56 +394,42 @@ function startPlayback() {
 
   const events = buildEvents(text, rootSemi, mode, beatSec, merge);
 
+  renderSheetMusic(events, rootSemi, mode, tempo);
+
   playing = true;
   document.getElementById('play-btn').disabled = true;
   document.getElementById('stop-btn').disabled = false;
-
-  buildTextDisplay(text);
 
   const ac = ctx();
   const t0 = ac.currentTime + 0.06;
   let elapsed = 0;
 
-  events.forEach(ev => {
+  events.forEach((ev, evIdx) => {
     const evStart = elapsed;
 
     if (ev.type === 'note') {
       scheduleNote(ev.midi, ev.audioDur, t0 + evStart);
     }
 
-    const tms = evStart * 1000;
     uiTimeouts.push(setTimeout(() => {
       if (!playing) return;
-      // Clear previous active
-      document.querySelectorAll('.ch.active').forEach(s => {
-        s.classList.remove('active');
-        s.classList.add('played');
-      });
-      // Highlight current chars
-      ev.charIndices.forEach(idx => {
-        const el = document.querySelector(`.ch[data-i="${idx}"]`);
-        if (el) {
-          el.classList.remove('played');
-          el.classList.add('active');
-          el.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
-        }
-      });
-      // Light up grid card
+
+      highlightSheetNote(evIdx);
+
+      // Grid card
       document.querySelectorAll('.letter-card.lit').forEach(c => c.classList.remove('lit'));
       if (ev.type === 'note') {
-        const card = document.getElementById(`lc-${ev.letter}`);
-        if (card) card.classList.add('lit');
+        document.getElementById(`lc-${ev.letter}`)?.classList.add('lit');
         document.getElementById('current-note').textContent =
           `${ev.letter}  →  ${ev.noteName}`;
       } else {
         document.getElementById('current-note').textContent = '·';
       }
-    }, tms));
+    }, evStart * 1000));
 
     elapsed += ev.slotDur;
   });
 
-  // End of playback
   uiTimeouts.push(setTimeout(() => stopPlayback(false), elapsed * 1000 + 150));
 }
 
@@ -265,34 +442,19 @@ function stopPlayback(reset = true) {
   document.getElementById('play-btn').disabled = false;
   document.getElementById('stop-btn').disabled = true;
   document.querySelectorAll('.letter-card.lit').forEach(c => c.classList.remove('lit'));
+  document.getElementById('sheet-music')
+    .querySelectorAll('.vf-active').forEach(el => el.classList.remove('vf-active'));
 
   if (reset) {
     document.getElementById('current-note').textContent = '—';
-    document.querySelectorAll('.ch').forEach(s => s.classList.remove('active', 'played'));
   } else {
-    document.querySelectorAll('.ch.active').forEach(s => {
-      s.classList.remove('active'); s.classList.add('played');
-    });
     const el = document.getElementById('current-note');
     el.textContent = '✓';
     setTimeout(() => { el.textContent = '—'; }, 1200);
   }
 }
 
-// ── Display builders ──────────────────────────────────────────────────────────
-
-function buildTextDisplay(text) {
-  const display = document.getElementById('note-display');
-  display.innerHTML = '';
-  for (let i = 0; i < text.length; i++) {
-    const ch = text[i];
-    const span = document.createElement('span');
-    span.className = 'ch' + (ch === ' ' ? ' space' : '');
-    span.dataset.i = i;
-    span.textContent = ch === ' ' ? ' ' : ch;
-    display.appendChild(span);
-  }
-}
+// ── Mapping grid ──────────────────────────────────────────────────────────────
 
 function updateMappingGrid() {
   const rootSemi = parseInt(document.getElementById('key-select').value);
@@ -304,7 +466,6 @@ function updateMappingGrid() {
   for (let i = 0; i < 26; i++) {
     const letter = String.fromCharCode(65 + i);
     const name   = letterNoteName(letter, rootSemi, mode);
-
     const card   = document.createElement('div');
     card.className = 'letter-card';
     card.id = `lc-${letter}`;
@@ -321,40 +482,32 @@ function updateMappingGrid() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  // Mode toggle
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       updateMappingGrid();
+      scheduleSheetRefresh();
     });
   });
 
-  // Key select
-  document.getElementById('key-select').addEventListener('change', updateMappingGrid);
+  document.getElementById('key-select').addEventListener('change', () => {
+    updateMappingGrid();
+    scheduleSheetRefresh();
+  });
 
-  // Tempo
   document.getElementById('tempo-input').addEventListener('input', function () {
     document.getElementById('tempo-val').textContent = this.value;
+    scheduleSheetRefresh();
   });
 
-  // Text live preview
-  document.getElementById('text-input').addEventListener('input', function () {
-    if (!playing) {
-      if (this.value.trim()) {
-        buildTextDisplay(this.value);
-      } else {
-        document.getElementById('note-display').innerHTML =
-          '<span class="hint">Press ▶ Play to hear your text as music</span>';
-      }
-    }
-  });
+  document.getElementById('merge-repeats').addEventListener('change', scheduleSheetRefresh);
 
-  // Buttons
+  document.getElementById('text-input').addEventListener('input', scheduleSheetRefresh);
+
   document.getElementById('play-btn').addEventListener('click', startPlayback);
   document.getElementById('stop-btn').addEventListener('click', () => stopPlayback(true));
 
-  // Space bar shortcut (not when typing in textarea)
   document.addEventListener('keydown', e => {
     if (e.code === 'Space' && e.target.tagName !== 'TEXTAREA') {
       e.preventDefault();
