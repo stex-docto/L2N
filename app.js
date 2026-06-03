@@ -191,12 +191,25 @@ function letterToVFKey(letter, rootSemi, mode) {
   return `${bl.toLowerCase()}${acc}/4`;
 }
 
-// Beat count → VexFlow duration string
+// Beat count → { dur, dots } for VexFlow 5 (dotted notes need explicit dots)
 function beatsToDur(beats) {
-  if (beats >= 4) return 'w';
-  if (beats >= 3) return 'hd';
-  if (beats >= 2) return 'h';
-  return 'q';
+  if (beats >= 4) return { dur: 'w', dots: 0 };
+  if (beats >= 3) return { dur: 'h', dots: 1 };
+  if (beats >= 2) return { dur: 'h', dots: 0 };
+  return { dur: 'q', dots: 0 };
+}
+
+function makeVFNote({ beats, key, alt, isRest }) {
+  const { StaveNote, Accidental, Dot } = VexFlow;
+  const { dur, dots } = beatsToDur(beats);
+  const n = new StaveNote({
+    keys:     [isRest ? 'b/4' : key],
+    duration: isRest ? `${dur}r` : dur,
+    dots,
+  });
+  if (dots) n.addDotToAll();
+  if (!isRest && alt) n.addModifier(new Accidental(alt > 0 ? '#' : 'b'), 0);
+  return n;
 }
 
 // Decompose a beat count into valid VF durations (largest first)
@@ -216,7 +229,7 @@ function renderSheetMusic(events, rootSemi, mode, tempo) {
 
   if (!events.length || typeof VexFlow === 'undefined') return;
 
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, StaveTie } = VexFlow;
+  const { Renderer, Stave, Voice, Formatter, StaveTie } = VexFlow;
   const beatSec = 60 / tempo;
 
   // ── 1. Flatten events → render items ────────────────────────────────────────
@@ -302,26 +315,15 @@ function renderSheetMusic(events, rootSemi, mode, tempo) {
     stave.setContext(gCtx).draw();
 
     const vfNotes = mItems.map(item => {
-      const dur = beatsToDur(item.beats);
-
       if (item.isNote) {
-        const n = new StaveNote({ keys: [item.key], duration: dur });
-        if (item.alt !== 0) {
-          n.addModifier(new Accidental(item.alt > 0 ? '#' : 'b'), 0);
-        }
-        // Map first occurrence for highlight
+        const n = makeVFNote({ beats: item.beats, key: item.key, alt: item.alt });
         if (item.evIdx >= 0 && item.first) vfNoteMap[item.evIdx] = n;
-
-        // Tie from previous measure
-        if (item.tieFrom && pendingTie) {
-          tiePairs.push({ from: pendingTie.note, to: n });
-        }
+        if (item.tieFrom && pendingTie) tiePairs.push({ from: pendingTie.note, to: n });
         pendingTie = item.tieTo ? { note: n } : null;
         return n;
       }
-
       pendingTie = null;
-      return new StaveNote({ keys: ['b/4'], duration: `${dur}r` });
+      return makeVFNote({ beats: item.beats, isRest: true });
     });
 
     // Intra-measure ties
