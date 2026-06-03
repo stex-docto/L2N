@@ -8,7 +8,7 @@ import {
   KeySignature, Note, Rest, Score,
 } from './domain.js';
 
-export function readText(text, { rootSemi, mode, tempo, merge }) {
+export function readText(text, { rootSemi, mode, merge }) {
   const keySig = new KeySignature(rootSemi, mode);
   const events = [];
   const upper  = text.toUpperCase();
@@ -46,5 +46,5 @@ export function readText(text, { rootSemi, mode, tempo, merge }) {
     }
   }
 
-  return new Score({ events, keySig, tempo });
+  return new Score({ events, keySig });
 }

@@ -111,11 +111,8 @@ export class Rest {
 }
 
 export class Score {
-  constructor({ events, keySig, tempo }) {
+  constructor({ events, keySig }) {
     this.events = events;   // (Note | Rest)[]
     this.keySig = keySig;   // KeySignature
-    this.tempo  = tempo;    // BPM
   }
-
-  get beatSec() { return 60 / this.tempo; }
 }

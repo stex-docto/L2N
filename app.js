@@ -32,7 +32,8 @@ function sheetContainer() {
 function currentScore() {
   const text = document.getElementById('text-input').value;
   if (!text.trim()) return null;
-  return readText(text, settings());
+  const { rootSemi, mode, merge } = settings();
+  return readText(text, { rootSemi, mode, merge });
 }
 
 // ── Playback ──────────────────────────────────────────────────────────────────
@@ -49,7 +50,7 @@ function startPlayback() {
   document.getElementById('play-btn').disabled = true;
   document.getElementById('stop-btn').disabled = false;
 
-  playScore(score, {
+  playScore(score, settings().tempo, {
     onEventStart(evIdx, ev) {
       if (!playing) return;
       highlightEvent(evIdx);

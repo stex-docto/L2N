@@ -6,19 +6,13 @@ import { Note, Rest, Score }  from './domain.js';
 
 // Shorthand: read a single character with given settings
 const read = (text, overrides = {}) =>
-  readText(text, { rootSemi: 9, mode: 'major', tempo: 120, merge: false, ...overrides });
+  readText(text, { rootSemi: 9, mode: 'major', merge: false, ...overrides });
 
 // ── Score ─────────────────────────────────────────────────────────────────────
 
 describe('Score', () => {
   it('returns a Score', () => {
     assert.ok(read('A') instanceof Score);
-  });
-
-  it('carries tempo and beatSec', () => {
-    const score = read('A', { tempo: 60 });
-    assert.equal(score.tempo, 60);
-    assert.equal(score.beatSec, 1);
   });
 
   it('is empty for blank text', () => {

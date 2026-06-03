@@ -63,21 +63,23 @@ function _killAudio() {
 // ── Public API ────────────────────────────────────────────────────────────────
 
 /**
- * Play a Score.
+ * Play a Score at the given tempo.
  * @param {Score} score
+ * @param {number} tempo  BPM — audio concern, not part of the domain
  * @param {{ onEventStart: (idx, event) => void, onDone: () => void }} callbacks
  */
-export function playScore(score, { onEventStart, onDone }) {
+export function playScore(score, tempo, { onEventStart, onDone }) {
   _killAudio();
   _timers.forEach(clearTimeout);
   _timers = [];
 
+  const beatSec = 60 / tempo;
   const ac = audioCtx();
   const t0 = ac.currentTime + 0.06;
   let elapsed = 0;
 
   score.events.forEach((ev, evIdx) => {
-    const slotSec = ev.beats * score.beatSec;
+    const slotSec = ev.beats * beatSec;
 
     if (ev.type === 'note') {
       // Single unmerged note: 40 ms gap for re-articulation.
