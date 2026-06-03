@@ -214,10 +214,9 @@ function renderSheetMusic(events, rootSemi, mode, tempo) {
   const container = document.getElementById('sheet-music');
   container.innerHTML = '';
 
-  if (!events.length || typeof Vex === 'undefined') return;
+  if (!events.length || typeof VexFlow === 'undefined') return;
 
-  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, StaveTie } =
-    Vex.Flow;
+  const { Renderer, Stave, StaveNote, Voice, Formatter, Accidental, StaveTie } = VexFlow;
   const beatSec = 60 / tempo;
 
   // ── 1. Flatten events → render items ────────────────────────────────────────
@@ -336,7 +335,7 @@ function renderSheetMusic(events, rootSemi, mode, tempo) {
       const voice = new Voice({ num_beats: BEATS_PER_MEASURE, beat_value: 4 });
       voice.setStrict(false);
       voice.addTickables(vfNotes);
-      new Formatter().joinVoices([voice]).format([voice], sw - 60);
+      new Formatter().joinVoices([voice]).formatToStave([voice], stave);
       voice.draw(gCtx, stave);
     } catch (e) { console.warn('VexFlow measure', mIdx, e); }
   });
@@ -481,6 +480,9 @@ function updateMappingGrid() {
 // ── Init ──────────────────────────────────────────────────────────────────────
 
 document.addEventListener('DOMContentLoaded', () => {
+
+  // Pre-load VexFlow fonts so first render is instant
+  if (typeof VexFlow !== 'undefined') VexFlow.loadFonts().catch(() => {});
 
   document.querySelectorAll('.toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
