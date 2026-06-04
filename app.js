@@ -19,9 +19,18 @@ let playing = false;
 function settings() {
   return {
     rootSemi: parseInt(document.getElementById('key-select').value),
-    mode:     document.querySelector('.toggle-btn.active').dataset.mode,
+    mode:     document.querySelector('.toggle-btn.active[data-mode]').dataset.mode,
     tempo:    parseInt(document.getElementById('tempo-input').value),
     merge:    document.getElementById('merge-repeats').checked,
+    rhythm:   document.querySelector('.toggle-btn.active[data-rhythm]').dataset.rhythm,
+    baseDur:  document.querySelector('.toggle-btn.active[data-dur]').dataset.dur,
+  };
+}
+
+function renderOpts(s) {
+  return {
+    beatsPerMeasure: s.rhythm === 'binary' ? 4 : 6,
+    baseDur: s.baseDur,
   };
 }
 
@@ -44,13 +53,15 @@ function startPlayback() {
 
   endPlayback(true);
 
-  renderScore(score, sheetContainer());
+  const s = settings();
+  renderScore(score, sheetContainer(), renderOpts(s));
 
   playing = true;
   document.getElementById('play-btn').disabled = true;
   document.getElementById('stop-btn').disabled = false;
 
-  playScore(score, settings().tempo, {
+  playScore(score, s.tempo, {
+    baseDur: s.baseDur,
     onEventStart(evIdx, ev) {
       if (!playing) return;
       highlightEvent(evIdx);
@@ -93,7 +104,7 @@ function scheduleRefresh() {
   _refreshTimer = setTimeout(() => {
     if (playing) return;
     const score = currentScore();
-    if (score) renderScore(score, sheetContainer());
+    if (score) renderScore(score, sheetContainer(), renderOpts(settings()));
     else       sheetContainer().innerHTML = '';
   }, 280);
 }
@@ -125,17 +136,24 @@ function updateMappingGrid() {
 
 document.addEventListener('DOMContentLoaded', () => {
 
-  if (typeof VexFlow !== 'undefined') VexFlow.loadFonts().catch(() => {});
+  if (typeof VexFlow !== 'undefined' && typeof VexFlow.loadFonts === 'function') {
+    VexFlow.loadFonts().catch(() => {});
+  }
 
-  // Mode toggle
-  document.querySelectorAll('.toggle-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      document.querySelectorAll('.toggle-btn').forEach(b => b.classList.remove('active'));
-      btn.classList.add('active');
-      updateMappingGrid();
-      scheduleRefresh();
+  function wireToggleGroup(attr, onChange) {
+    const sel = `.toggle-btn[data-${attr}]`;
+    document.querySelectorAll(sel).forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll(sel).forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        onChange();
+      });
     });
-  });
+  }
+
+  wireToggleGroup('mode',   () => { updateMappingGrid(); scheduleRefresh(); });
+  wireToggleGroup('rhythm', scheduleRefresh);
+  wireToggleGroup('dur',    scheduleRefresh);
 
   // Key
   document.getElementById('key-select').addEventListener('change', () => {

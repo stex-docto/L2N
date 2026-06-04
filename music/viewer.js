@@ -10,33 +10,40 @@ function vfKey(note) {
   return `${note.baseLetter.toLowerCase()}${acc}/4`;
 }
 
-// Decompose beat count into valid note values (largest first)
-function splitBeats(total) {
+// Map unit-count → VexFlow {dur, dots} per base duration.
+// Index = number of base-note units (1–6). Index 5 is unreachable via splitBeats.
+const DUR_SHAPES = {
+  quarter:   [null, {dur:'q',dots:0}, {dur:'h',dots:0}, {dur:'h',dots:1}, {dur:'w',dots:0}, null, {dur:'w',dots:1}],
+  eighth:    [null, {dur:'8',dots:0}, {dur:'q',dots:0}, {dur:'q',dots:1}, {dur:'h',dots:0}, null, {dur:'h',dots:1}],
+  sixteenth: [null, {dur:'16',dots:0},{dur:'8',dots:0}, {dur:'8',dots:1}, {dur:'q',dots:0}, null, {dur:'q',dots:1}],
+};
+
+// Decompose a unit count into drawable chunks (largest first, capped at max).
+// max=4 for binary, max=6 for ternary (enables dotted-whole/half/quarter spanning full measure).
+function splitBeats(total, max = 4) {
   const out = [];
   let r = total;
-  for (const d of [4, 3, 2, 1]) {
+  for (const d of [6, 4, 3, 2, 1].filter(d => d <= max)) {
     while (r >= d - 0.01) { out.push(d); r -= d; }
   }
   return out.length ? out : [1];
 }
 
-function noteShape(beats) {
-  if (beats >= 4) return { dur: 'w', dots: 0 };
-  if (beats >= 3) return { dur: 'h', dots: 1 };
-  if (beats >= 2) return { dur: 'h', dots: 0 };
-  return { dur: 'q', dots: 0 };
+function noteShape(units, baseDur) {
+  const shapes = DUR_SHAPES[baseDur] || DUR_SHAPES.quarter;
+  return shapes[Math.min(6, Math.max(1, units))] || { dur: 'w', dots: 0 };
 }
 
-function makeVFNote({ beats, key, alt, isRest }) {
+function makeVFNote({ beats, key, alt, isNote }, baseDur) {
   const VF = window.VexFlow;
-  const { dur, dots } = noteShape(beats);
+  const { dur, dots } = noteShape(beats, baseDur);
   const n = new VF.StaveNote({
-    keys:     [isRest ? 'b/4' : key],
-    duration: isRest ? `${dur}r` : dur,
+    keys:     [isNote ? key : 'b/4'],
+    duration: isNote ? dur : `${dur}r`,
     dots,
   });
-  if (dots)                n.addDotToAll();
-  if (!isRest && alt !== 0) n.addModifier(new VF.Accidental(alt > 0 ? '#' : 'b'), 0);
+  if (dots)               n.addDotToAll();
+  if (isNote && alt !== 0) n.addModifier(new VF.Accidental(alt > 0 ? '#' : 'b'), 0);
   return n;
 }
 
@@ -52,7 +59,7 @@ let _container = null;
  * @param {Score} score
  * @param {HTMLElement} container
  */
-export function renderScore(score, container) {
+export function renderScore(score, container, { beatsPerMeasure = 4, baseDur = 'quarter' } = {}) {
   _vfNoteMap = {};
   _container = container;
   container.innerHTML = '';
@@ -61,16 +68,15 @@ export function renderScore(score, container) {
 
   const VF = window.VexFlow;
   const { Renderer, Stave, Voice, Formatter, StaveTie } = VF;
+  const beatValue = { quarter: 4, eighth: 8, sixteenth: 16 }[baseDur] || 4;
 
   // ── 1. Flatten Score events → render items ────────────────────────────────
-  // Items represent individual VexFlow notes/rests.
-  // Merged notes with >4 beats are split and connected with ties.
   const items = [];
 
   score.events.forEach((ev, evIdx) => {
     if (ev.type === 'note') {
       const key   = vfKey(ev);
-      const parts = splitBeats(ev.beats);
+      const parts = splitBeats(ev.beats, beatsPerMeasure);
       parts.forEach((b, pi) => {
         items.push({
           isNote:  true,
@@ -84,21 +90,21 @@ export function renderScore(score, container) {
         });
       });
     } else {
-      splitBeats(Math.min(4, ev.beats)).forEach(b => {
+      splitBeats(Math.min(beatsPerMeasure, ev.beats), beatsPerMeasure).forEach(b => {
         items.push({ isNote: false, beats: b, evIdx });
       });
     }
   });
 
-  // ── 2. Pack into 4-beat measures ─────────────────────────────────────────
-  const BEATS = 4;
+  // ── 2. Pack into measures ────────────────────────────────────────────────
+  const BEATS = beatsPerMeasure;
   const measures = [];
   let cur = [], curB = 0;
 
   function closeMeasure() {
     const pad = BEATS - curB;
     if (pad > 0.01) {
-      splitBeats(pad).forEach(b =>
+      splitBeats(pad, BEATS).forEach(b =>
         cur.push({ isNote: false, beats: b, evIdx: -1 })
       );
     }
@@ -138,11 +144,11 @@ export function renderScore(score, container) {
 
     const stave = new Stave(x, y, sw - 5);
     if (col === 0)  stave.addClef('treble');
-    if (mIdx === 0) stave.addTimeSignature('4/4');
+    if (mIdx === 0) stave.addTimeSignature(`${BEATS}/${beatValue}`);
     stave.setContext(gCtx).draw();
 
     const vfNotes = mItems.map((item, i) => {
-      const n = makeVFNote(item);
+      const n = makeVFNote(item, baseDur);
 
       if (item.isNote) {
         if (item.evIdx >= 0 && item.first) _vfNoteMap[item.evIdx] = n;
@@ -160,7 +166,7 @@ export function renderScore(score, container) {
     });
 
     try {
-      const voice = new Voice({ num_beats: BEATS, beat_value: 4 });
+      const voice = new Voice({ num_beats: BEATS, beat_value: beatValue });
       voice.setStrict(false);
       voice.addTickables(vfNotes);
       new Formatter().joinVoices([voice]).formatToStave([voice], stave);

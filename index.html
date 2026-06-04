@@ -53,14 +53,30 @@
           </div>
         </div>
 
-        <div class="control-group grow">
-          <label class="field-label">Tempo — <strong id="tempo-val">120</strong> BPM</label>
-          <input type="range" id="tempo-input" min="40" max="240" value="120" step="5">
+      </div>
+
+      <div class="control-row second-row">
+
+        <div class="control-group">
+          <label class="field-label">Rythme</label>
+          <div class="toggle-row">
+            <button class="toggle-btn active" data-rhythm="binary">Binaire</button>
+            <button class="toggle-btn"        data-rhythm="ternary">Ternaire</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <label class="field-label">Durée</label>
+          <div class="toggle-row">
+            <button class="toggle-btn active" data-dur="quarter">♩ Noire</button>
+            <button class="toggle-btn"        data-dur="eighth">♪ Croche</button>
+            <button class="toggle-btn"        data-dur="sixteenth">♬ D. Croche</button>
+          </div>
         </div>
 
       </div>
 
-      <div class="control-row second-row">
+      <div class="control-row third-row">
         <label class="check-control">
           <input type="checkbox" id="merge-repeats" checked>
           <span>Merge repeated letters into longer notes
@@ -68,6 +84,7 @@
           </span>
         </label>
       </div>
+
     </section>
 
     <!-- Player -->
@@ -75,8 +92,12 @@
       <div id="sheet-music" class="sheet-music"></div>
       <div id="current-note" class="current-note">—</div>
       <div class="btn-row">
-        <button id="play-btn"  class="btn-play">▶ Play</button>
-        <button id="stop-btn"  class="btn-stop" disabled>■ Stop</button>
+        <div class="tempo-inline">
+          <input type="range" id="tempo-input" min="40" max="240" value="120" step="5">
+          <span><strong id="tempo-val">120</strong> BPM</span>
+        </div>
+        <button id="play-btn" class="btn-play">▶ Play</button>
+        <button id="stop-btn" class="btn-stop" disabled>■ Stop</button>
       </div>
     </section>
 

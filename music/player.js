@@ -46,6 +46,8 @@ function _scheduleOsc(freq, duration, startTime) {
 
 function midiToFreq(midi) { return 440 * Math.pow(2, (midi - 69) / 12); }
 
+const BASE_DUR_FRAC = { quarter: 1, eighth: 0.5, sixteenth: 0.25 };
+
 function _killAudio() {
   if (!_ctx) return;
   const now = _ctx.currentTime;
@@ -68,12 +70,12 @@ function _killAudio() {
  * @param {number} tempo  BPM — audio concern, not part of the domain
  * @param {{ onEventStart: (idx, event) => void, onDone: () => void }} callbacks
  */
-export function playScore(score, tempo, { onEventStart, onDone }) {
+export function playScore(score, tempo, { onEventStart, onDone, baseDur = 'quarter' }) {
   _killAudio();
   _timers.forEach(clearTimeout);
   _timers = [];
 
-  const beatSec = 60 / tempo;
+  const beatSec = 60 / tempo * (BASE_DUR_FRAC[baseDur] || 1);
   const ac = audioCtx();
   const t0 = ac.currentTime + 0.06;
   let elapsed = 0;
