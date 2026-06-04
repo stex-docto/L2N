@@ -18,12 +18,15 @@ export function readText(text, { rootSemi, mode, merge }) {
     const ch = upper[i];
 
     if (ch >= 'A' && ch <= 'Z') {
+      const bl  = baseLetter(ch);
       let count = 1;
       if (merge) {
-        while (i + count < text.length && upper[i + count] === ch) count++;
+        while (
+          i + count < text.length &&
+          upper[i + count] >= 'A' && upper[i + count] <= 'Z' &&
+          baseLetter(upper[i + count]) === bl
+        ) count++;
       }
-
-      const bl   = baseLetter(ch);
       const alt  = keySig.altFor(bl);
       const midi = NATURAL_MIDI[bl] + alt;
       const acc  = alt === 1 ? '#' : alt === -1 ? 'b' : '';
